@@ -1,0 +1,10 @@
+<?php
+echo $hashedPassword = crypt('del67sha', "$6$".substr(sha1(rand()), 0, 16));
+echo '<br/>';
+$salt = substr($hashedPassword, 0, 19);
+if(hash_equals(crypt('del67sha', $salt), $hashedPassword)){
+        echo 'Verified Passwd!';
+}
+else
+        echo 'Not Verified Passwd!';
+?>
