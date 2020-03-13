@@ -123,5 +123,5 @@ VALUES
   ('3', 'hostname'),
   ('4', 'localhost.example.com');
 ~~~
->Note  
->Note which id corresponds to which domain, the id value is necessary for the next two steps.
+>**Note**  
+>Note which `id` corresponds to which domain, the `id` value is necessary for the next two steps.
