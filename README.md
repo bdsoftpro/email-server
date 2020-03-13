@@ -490,7 +490,7 @@ auth_mechanisms = plain login
 !include auth-sql.conf.ext
 ...
 ~~~
->**Note**
+>**Note**  
 >For reference, view a complete 10-auth.conf file.
 8. Edit the `/etc/dovecot/conf.d/auth-sql.conf.ext` file with authentication and storage information. Ensure your file contains the following lines. Make sure the `passdb` section is uncommented, that the `userdb` section that uses the `static` driver is uncommented and update with the right argument, and comment out the `userdb` section that uses the `sql` driver:
 ~~~
@@ -531,7 +531,7 @@ The `password_query` variable uses email addresses listed in the `virtual_users`
 To use an alias as the username:  
 1. Add the alias as the `source` and `destination` email address to the `virtual_aliases` table.
 2. Change the `/etc/dovecot/dovecot-sql.conf.ext` file’s `password_query` value to `password_query = SELECT email as user, password FROM virtual_users WHERE email=(SELECT destination FROM virtual_aliases WHERE source = '%u');`
->**Note**
+>**Note**  
 >For reference, view a complete `dovecot-sql.conf.ext`file.
 
 10. Change the owner and group of the `/etc/dovecot/ directory` to `vmail` and `dovecot`:
@@ -544,7 +544,7 @@ sudo chmod -R o-rwx /etc/dovecot
 ~~~
 12. Edit the service settings file `/etc/dovecot/conf.d/10-master.conf`:
 
->**Note**
+>**Note**  
 >When editing the file, be careful not to remove any opening or closing curly braces. If there’s a syntax error, Dovecot will crash silently. You can check `/var/log/upstart/dovecot.log` to debug the error.
 >  
 >Here is an example of a complete `10-master.conf` file.
@@ -738,7 +738,7 @@ INSERT INTO `mailserver`.`virtual_users`
 VALUES
   ('5', ENCRYPT('newpassword', CONCAT('$6$', SUBSTRING(SHA(RAND()), -16))) , 'email3@newdomain.com');
 ~~~
->**Note**
+>**Note**  
 >The `domain_id` should correspond to the `id` value of the domain in the `virtual_domains` table. In the example, we are creating an email address for `newdomain.com` added in the previous section.
 4. Verify that the new email address has been added. The new email address should be displayed in the output:
 ~~~
@@ -774,7 +774,7 @@ INSERT INTO `mailserver`.`virtual_aliases`
 VALUES
   ('5', 'alias@newdomain.com', 'myemail@gmail.com');
 ~~~
->**Note**
+>**Note**  
 >The `domain_id` should correspond to the `id` value of the domain in the `virtual_domains` table. In the example, we are creating an email address for `newdomain.com` added in the previous section.
 
 You can create a “catch-all” alias which will forward all emails sent to the matching domain that does not have matching aliases or users. Replace `@newdomain.com` with your domain. This value is the source of the alias.
