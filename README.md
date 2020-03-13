@@ -19,7 +19,7 @@ Verify that the `hosts file` contains a line for the Linode’s public IP addres
 
 ~~~
 /etc/hosts  
-=====
+=================================================
 1. 127.0.0.1 localhost.localdomain localhost  
 2. 192.0.2.0 hostname.example.com hostname  
 ~~~
@@ -43,4 +43,9 @@ You will not be prompted to enter a password for the root MySQL user for recent 
 When prompted, select **Internet Site** as the type of mail server the Postfix installer should configure. The System Mail Name should be the FQDN.  
 
 ![Install Step 1](https://raw.githubusercontent.com/bdsoftpro/email-server/master/1236-postfix_internetsite.png "Configure")  
-![Install Step 2](https://github.com/bdsoftpro/email-server/blob/master/1237-postfix_systemmailname.png "Host Configure")
+![Install Step 2](https://github.com/bdsoftpro/email-server/blob/master/1237-postfix_systemmailname.png "Host Configure")  
+
+This guide uses the following package versions:  
+* Postfix 3.3.0
+* Dovecot 2.2.33.2
+* MySQL 14.14
