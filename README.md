@@ -14,3 +14,5 @@ example.com MX 10 example.com
 mail.example.com MX 10 example.com  
 ~~~
 Make sure that the MX record is changed for all domains and subdomains that might receive email. If setting up a brand new domain, these steps can be performed prior to configuring the mail server. When using Linode’s DNS Manager, create an MX record that points to the desired domain or subdomain, and then create an A record for that domain or subdomain, which points to the correct IP address.  
+## Update Hosts File
+Verify that the hosts file contains a line for the Linode’s public IP address and is associated with the Fully Qualified Domain Name (FQDN). In the example below, 192.0.2.0 is the public IP address, hostname is the local hostname, and hostname.example.com is the FQDN.  
