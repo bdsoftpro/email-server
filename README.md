@@ -514,3 +514,127 @@ userdb {
 ...
 ~~~
 9. Update the `/etc/dovecot/dovecot-sql.conf.ext` file with your MySQL connection information. Uncomment the following variables and replace the values with the excerpt example. Replace `dbname`, `user` and `password` with your own MySQL database values:
+~~~
+dovecot-sql.conf.ext
+=======================================================
+...
+driver = mysql
+...
+connect = host=127.0.0.1 dbname=mailserver user=mailuser password=mailuserpass
+...
+default_pass_scheme = SHA512-CRYPT
+...
+password_query = SELECT email as user, password FROM virtual_users WHERE email='%u';
+...
+~~~
+The `password_query` variable uses email addresses listed in the `virtual_users` table as the username credential for an email account.    
+To use an alias as the username:  
+1. Add the alias as the `source` and `destination` email address to the `virtual_aliases` table.
+2. Change the `/etc/dovecot/dovecot-sql.conf.ext` file’s `password_query` value to `password_query = SELECT email as user, password FROM virtual_users WHERE email=(SELECT destination FROM virtual_aliases WHERE source = '%u');`
+>**Note**
+>For reference, view a complete `dovecot-sql.conf.ext`file.
+
+10. Change the owner and group of the `/etc/dovecot/ directory` to `vmail` and `dovecot`:
+~~~
+sudo chown -R vmail:dovecot /etc/dovecot
+~~~
+11. Change the permissions on the `/etc/dovecot/` directory to be recursively read, write, and execute for the owner of the directory:
+~~~
+sudo chmod -R o-rwx /etc/dovecot
+~~~
+12. Edit the service settings file `/etc/dovecot/conf.d/10-master.conf`:
+
+>**Note**
+>When editing the file, be careful not to remove any opening or closing curly braces. If there’s a syntax error, Dovecot will crash silently. You can check `/var/log/upstart/dovecot.log` to debug the error.
+>  
+>Here is an example of a complete `10-master.conf` file.
+
+Disable unencrypted IMAP and POP3 by setting the protocols’ ports to `0`. Uncomment the `port` and `ssl` variables:
+~~~
+10-master.conf
+==========================================
+...
+service imap-login {
+  inet_listener imap {
+    port = 0
+  }
+  inet_listener imaps {
+    port = 993
+    ssl = yes
+  }
+  ...
+}
+...
+service pop3-login {
+  inet_listener pop3 {
+    port = 0
+  }
+  inet_listener pop3s {
+    port = 995
+    ssl = yes
+  }
+}
+...
+~~~
+Find the `service lmtp` section of the file and use the configuration shown below:
+~~~
+10-master.conf
+====================================================
+...
+service lmtp {
+  unix_listener /var/spool/postfix/private/dovecot-lmtp {
+    #mode = 0666i
+    mode = 0600
+    user = postfix
+    group = postfix
+  }
+...
+}
+~~~
+Locate `service auth` and configure it as shown below:
+~~~
+...
+service auth {
+  ...
+  unix_listener /var/spool/postfix/private/auth {
+    mode = 0660
+    user = postfix
+    group = postfix
+  }
+
+  unix_listener auth-userdb {
+    mode = 0600
+    user = vmail
+  }
+...
+  user = dovecot
+}
+...
+~~~
+In the `service auth-worker` section, uncomment the `user` line and set it to `vmail`:
+~~~
+10-master.conf
+=========================================================
+...
+service auth-worker {
+  ...
+  user = vmail
+}
+~~~
+Save the changes to the `/etc/dovecot/conf.d/10-master.conf` file.
+13. Edit `/etc/dovecot/conf.d/10-ssl.conf` file to require SSL and to add the location of your domain’s SSL certificate and key. Replace `example.com` with your domain:
+~~~
+10-ssl.conf
+============================================================
+...
+# SSL/TLS support: yes, no, required. <doc/wiki/SSL.txt>
+ssl = required
+...
+ssl_cert = </etc/letsencrypt/live/example.com/fullchain.pem
+ssl_key = </etc/letsencrypt/live/example.com/privkey.pem
+~~~
+14. Restart Dovecot to enable all configurations:
+~~~
+sudo systemctl restart dovecot
+~~~
+## Test Email with Mailutils
