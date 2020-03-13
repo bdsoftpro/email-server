@@ -19,7 +19,7 @@ Verify that the `hosts file` contains a line for the Linode’s public IP addres
 
 ~~~
 /etc/hosts  
----
+=====
 1. 127.0.0.1 localhost.localdomain localhost  
 2. 192.0.2.0 hostname.example.com hostname  
 ~~~
