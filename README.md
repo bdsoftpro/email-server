@@ -2,7 +2,7 @@
 Email server setup details, that describes brllow:  
 
 ## Before You Begin
-1. Set up the Linode as specified in the Getting Started and Securing Your Server guides.  
+1. Set up the Linode as specified in the <font color='red'>Getting Started</font> and Securing Your Server guides.  
 2. Verify that the iptables firewall is not blocking any of the standard mail ports (`25`, `465`, `587`, `110`, `995`, `143`, and `993`). If using a different form of firewall, confirm that it is not blocking any of the needed ports.  
 3. Review the concepts in the Running a Mail Server guide.  
 
