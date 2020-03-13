@@ -461,6 +461,7 @@ mail_location = maildir:/var/mail/vhosts/%d/%n/
 ...
 mail_privileged_group = mail
 ...
+~~~
 4. Create the `/var/mail/vhosts/` directory and a subdirectory for your domain. Replace `example.com` with your domain name:
 ~~~
 sudo mkdir -p /var/mail/vhosts/example.com
