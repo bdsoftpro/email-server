@@ -328,4 +328,188 @@ hosts = 127.0.0.1
 dbname = mailserver
 query = SELECT 1 FROM virtual_domains WHERE name='%s'
 ~~~
-
+4. Create the `/etc/postfix/mysql-virtual-mailbox-maps.cf` file, and enter the following values. Use the database user’s password and make any other changes as needed:
+~~~
+/etc/postfix/mysql-virtual-mailbox-maps.cf
+============================================================
+user = mailuser
+password = mailuserpass
+hosts = 127.0.0.1
+dbname = mailserver
+query = SELECT 1 FROM virtual_users WHERE email='%s'
+~~~
+5. Create the `/etc/postfix/mysql-virtual-alias-maps.cf` file and enter the following values. Use the database user’s password and make any other changes as needed:
+~~~
+/etc/postfix/mysql-virtual-alias-maps.cf
+=======================================================
+user = mailuser
+password = mailuserpass
+hosts = 127.0.0.1
+dbname = mailserver
+query = SELECT destination FROM virtual_aliases WHERE source='%s'
+~~~
+6. Create the `/etc/postfix/mysql-virtual-email2email.cf` file and enter the following values. Use the database user’s password and make any other changes as needed:
+~~~
+/etc/postfix/mysql-virtual-email2email.cf
+===========================================================
+user = mailuser
+password = mailuserpass
+hosts = 127.0.0.1
+dbname = mailserver
+query = SELECT email FROM virtual_users WHERE email='%s'
+~~~
+7. Restart Postfix:
+~~~
+Restart Postfix:
+~~~
+8. The `postmap` command creates or queries Postfix’s lookup tables, or updates an existing one. Enter the following command to ensure that Postfix can query the `virtual_domains` table. Replace `example.com` with the first `name` value. The command should return `1` if it is successful:
+~~~
+sudo postmap -q example.com mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf
+~~~
+9. Test Postfix to verify that it can retrieve the first email address from the MySQL table `virtual_users`. Replace `email1@example.com` with the first email address added to the table. You should receive `1` as the output:
+~~~
+sudo postmap -q email1@example.com mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf
+~~~
+10. Test Postfix to verify that it can query the `virtual_aliases` table. Replace `alias@example.com` with the first `source` value created in the table. The command should return the `destination` value for the row:
+~~~
+sudo postmap -q alias@example.com mysql:/etc/postfix/mysql-virtual-alias-maps.cf
+~~~
+## Master Program Settings
+Postfix’s master program starts and monitors all of Postfix’s processes. The configuration file `master.cf` lists all programs and information on how they should be started.
+1. Make a copy of the `/etc/postfix/master.cf` file:
+~~~
+Make a copy of the /etc/postfix/master.cf file:
+~~~
+2. Edit `/etc/postfix/master.cf` to contain the values in the excerpt example. The rest of the file can remain unchanged:
+~~~
+master.cf
+===============================================================
+#
+# Postfix master process configuration file.  For details on the format
+# of the file, see the master(5) manual page (command: "man 5 master" or
+# on-line: http://www.postfix.org/master.5.html).
+#
+# Do not forget to execute "postfix reload" after editing this file.
+#
+# ==========================================================================
+# service type  private unpriv  chroot  wakeup  maxproc command + args
+#               (yes)   (yes)   (yes)    (never) (100)
+# ==========================================================================
+smtp      inet  n       -       n       -       -       smtpd
+#smtp      inet  n       -       -       -       1       postscreen
+#smtpd     pass  -       -       -       -       -       smtpd
+#dnsblog   unix  -       -       -       -       0       dnsblog
+#tlsproxy  unix  -       -       -       -       0       tlsproxy
+submission inet n       -       y      -       -       smtpd
+  -o syslog_name=postfix/submission
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_sasl_type=dovecot
+  -o smtpd_sasl_path=private/auth
+  -o smtpd_reject_unlisted_recipient=no
+  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+  -o milter_macro_daemon_name=ORIGINATING
+smtps     inet  n       -       -       -       -       smtpd
+  -o syslog_name=postfix/smtps
+  -o smtpd_tls_wrappermode=yes
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_sasl_type=dovecot
+  -o smtpd_sasl_path=private/auth
+  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+  -o milter_macro_daemon_name=ORIGINATING
+  ...
+~~~
+3. Change the permissions of the `/etc/postfix` directory to restrict permissions to allow only its owner and the corresponding group:
+~~~
+sudo chmod -R o-rwx /etc/postfix
+~~~
+4. Restart Postfix:
+~~~
+sudo systemctl restart postfix
+~~~
+## Dovecot
+Dovecot is the Mail Delivery Agent (MDA) which is passed messages from Postfix and delivers them to a virtual mailbox. In this section, configure Dovecot to force users to use SSL when they connect so that their passwords are never sent to the server in plain text.
+1. Copy all of the configuration files so you can easily revert back to them if needed:
+~~~
+sudo cp /etc/dovecot/dovecot.conf /etc/dovecot/dovecot.conf.orig
+sudo cp /etc/dovecot/conf.d/10-mail.conf /etc/dovecot/conf.d/10-mail.conf.orig
+sudo cp /etc/dovecot/conf.d/10-auth.conf /etc/dovecot/conf.d/10-auth.conf.orig
+sudo cp /etc/dovecot/dovecot-sql.conf.ext /etc/dovecot/dovecot-sql.conf.ext.orig
+sudo cp /etc/dovecot/conf.d/10-master.conf /etc/dovecot/conf.d/10-master.conf.orig
+sudo cp /etc/dovecot/conf.d/10-ssl.conf /etc/dovecot/conf.d/10-ssl.conf.orig
+~~~
+2. Edit the `/etc/dovecot/dovecot.conf` file. Add `protocols = imap pop3 lmtp` to the `# Enable installed protocols` section of the file:
+~~~
+dovecot.conf
+==========================================================
+## Dovecot configuration file
+...
+# Enable installed protocols
+!include_try /usr/share/dovecot/protocols.d/*.protocol
+protocols = imap pop3 lmtp
+...
+postmaster_address=postmaster at example.com
+~~~
+3. Edit the `/etc/dovecot/conf.d/10-mail.conf` file. This file controls how Dovecot interacts with the server’s file system to store and retrieve messages:
+  
+Modify the following variables within the configuration file:  
+~~~
+10-mail.conf
+=============================================================
+...
+mail_location = maildir:/var/mail/vhosts/%d/%n/
+...
+mail_privileged_group = mail
+...
+4. Create the `/var/mail/vhosts/` directory and a subdirectory for your domain. Replace `example.com` with your domain name:
+~~~
+sudo mkdir -p /var/mail/vhosts/example.com
+~~~
+This directory will serve as storage for mail sent to your domain.
+5. Create the `vmail` group with ID `5000`. Add a new user `vmail` to the `vmail` group. This system user will read mail from the server.
+~~~
+sudo groupadd -g 5000 vmail
+sudo useradd -g vmail -u 5000 vmail -d /var/mail
+~~~
+6. Change the owner of the `/var/mail/` folder and its contents to belong to `vmail`:
+~~~
+sudo chown -R vmail:vmail /var/mail
+~~~
+7. Edit the user authentication file, located in `/etc/dovecot/conf.d/10-auth.conf`. Uncomment the following variables and replace with the file excerpt’s example values:
+~~~
+10-auth.conf
+=====================================================
+...
+disable_plaintext_auth = yes
+...
+auth_mechanisms = plain login
+...
+!include auth-system.conf.ext
+...
+!include auth-sql.conf.ext
+...
+~~~
+>**Note**
+>For reference, view a complete 10-auth.conf file.
+8. Edit the `/etc/dovecot/conf.d/auth-sql.conf.ext` file with authentication and storage information. Ensure your file contains the following lines. Make sure the `passdb` section is uncommented, that the `userdb` section that uses the `static` driver is uncommented and update with the right argument, and comment out the `userdb` section that uses the `sql` driver:
+~~~
+auth-sql.conf.ext
+===========================================================
+...
+passdb {
+  driver = sql
+  args = /etc/dovecot/dovecot-sql.conf.ext
+}
+...
+#userdb {
+#  driver = sql
+#  args = /etc/dovecot/dovecot-sql.conf.ext
+#}
+...
+userdb {
+  driver = static
+  args = uid=vmail gid=vmail home=/var/mail/vhosts/%d/%n
+}
+...
+~~~
+9. Update the `/etc/dovecot/dovecot-sql.conf.ext` file with your MySQL connection information. Uncomment the following variables and replace the values with the excerpt example. Replace `dbname`, `user` and `password` with your own MySQL database values:
