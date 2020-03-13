@@ -17,10 +17,12 @@ Make sure that the MX record is changed for all domains and subdomains that migh
 ## Update Hosts File
 Verify that the `hosts file` contains a line for the Linode’s public IP address and is associated with the **Fully Qualified Domain Name** (FQDN). In the example below, `192.0.2.0` is the public IP address, `hostname` is the local hostname, and `hostname.example.com` is the FQDN.  
 
-| /etc/hosts	|
-| ---      |
-| 1. 127.0.0.1 localhost.localdomain localhost  |
-| 2. 192.0.2.0 hostname.example.com hostname	  |
+~~~
+/etc/hosts  
+---
+1. 127.0.0.1 localhost.localdomain localhost  
+2. 192.0.2.0 hostname.example.com hostname  
+~~~
 
 ## Install SSL Certificate
 You will need to install a SSL certificate on your mail server prior to completing the Dovecot configuration steps. The SSL certificate will authenticate the identity of the mail server to users and encrypt the transmitted data between the user’s mail client and the mail server. Follow our guide to Install an SSL certificate with Certbot.  
