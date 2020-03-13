@@ -316,7 +316,7 @@ unknown_hostname_reject_code = 550
 unverified_recipient_reject_code = 550
 unverified_sender_reject_code = 550
 ~~~
-3. The `main.cf` file declares the location of `virtual_mailbox_domains`, `virtual_mailbox_maps`, and `virtual_alias_maps` files. These files contain the connection information for the MySQL lookup tables created in the MySQL section of this guide. Postfix will use this data to identify all domains, corresponding mailboxes, and valid users.
+3. The `main.cf` file declares the location of `virtual_mailbox_domains`, `virtual_mailbox_maps`, and `virtual_alias_maps` files. These files contain the connection information for the MySQL lookup tables created in the MySQL section of this guide. Postfix will use this data to identify all domains, corresponding mailboxes, and valid users.  
   Create the file for `virtual_mailbox_domains`. Replace the value for `password` with your database user’s password. If you used a different name for your `database` user and `dbname` replace those with your own values:
 ~~~
 /etc/postfix/mysql-virtual-mailbox-domains.cf
