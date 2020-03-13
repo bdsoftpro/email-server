@@ -49,3 +49,7 @@ This guide uses the following package versions:
 * Postfix 3.3.0
 * Dovecot 2.2.33.2
 * MySQL 14.14
+## MySQL
+The mail server’s virtual users and passwords are stored in a MySQL database. Dovecot and Postfix require this data. Follow the steps below to create the database tables for virtual users, domains and aliases:
+1. Use the mysql_secure_installation tool to configure additional security options. This tool will ask if you want to set a new password for the MySQL root user, but you can skip that step:
+```sudo mysql_secure_installation```
