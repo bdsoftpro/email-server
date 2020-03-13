@@ -40,5 +40,5 @@ You will not be prompted to enter a password for the root MySQL user for recent 
   
 When prompted, select **Internet Site** as the type of mail server the Postfix installer should configure. The System Mail Name should be the FQDN.  
 
-![Install Step 1](https://www.linode.com/docs/email/postfix/email-with-postfix-dovecot-and-mysql/1236-postfix_internetsite.png "Configure")  
-![Install Step 2](https://www.linode.com/docs/email/postfix/email-with-postfix-dovecot-and-mysql/1237-postfix_systemmailname.png "Host Configure")
+![Install Step 1](https://raw.githubusercontent.com/bdsoftpro/email-server/master/1236-postfix_internetsite.png "Configure")  
+![Install Step 2](https://github.com/bdsoftpro/email-server/blob/master/1237-postfix_systemmailname.png "Host Configure")
