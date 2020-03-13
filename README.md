@@ -64,4 +64,64 @@ Answer Y at the following prompts:
 ~~~
 sudo mysqladmin -u root -p create mailserver
 ~~~
-
+3. Log in to MySQL:
+~~~
+sudo mysql -u root -p
+~~~
+4. Create the MySQL user and grant the new user permissions over the database. Replace `mailuserpass` with a secure password:
+~~~
+GRANT SELECT ON mailserver.* TO 'mailuser'@'127.0.0.1' IDENTIFIED BY 'mailuserpass';
+~~~
+5. Flush the MySQL privileges to apply the change:
+~~~
+FLUSH PRIVILEGES;
+~~~
+6. Switch to the new `mailsever` database:
+~~~
+USE mailserver;
+~~~
+7. Create a table for the domains that will receive mail on the Linode:
+~~~
+CREATE TABLE `virtual_domains` (
+  `id` int(11) NOT NULL auto_increment,
+  `name` varchar(50) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+~~~
+8. Create a table for all of the email addresses and passwords:
+~~~
+CREATE TABLE `virtual_users` (
+  `id` int(11) NOT NULL auto_increment,
+  `domain_id` int(11) NOT NULL,
+  `password` varchar(106) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`),
+  FOREIGN KEY (domain_id) REFERENCES virtual_domains(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+~~~~
+9. Create a table for the email aliases:
+~~~
+CREATE TABLE `virtual_aliases` (
+  `id` int(11) NOT NULL auto_increment,
+  `domain_id` int(11) NOT NULL,
+  `source` varchar(100) NOT NULL,
+  `destination` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (domain_id) REFERENCES virtual_domains(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+~~~
+## Adding Data
+Now that the database and tables have been created, add some data to MySQL.  
+1. Add the domains to the `virtual_domains` table. Replace the values for `example.com` and `hostname` with your own settings:
+~~~
+INSERT INTO `mailserver`.`virtual_domains`
+  (`id` ,`name`)
+VALUES
+  ('1', 'example.com'),
+  ('2', 'hostname.example.com'),
+  ('3', 'hostname'),
+  ('4', 'localhost.example.com');
+~~~
+>Note
+>Note which id corresponds to which domain, the id value is necessary for the next two steps.
