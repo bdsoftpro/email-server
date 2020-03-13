@@ -18,9 +18,7 @@ Make sure that the MX record is changed for all domains and subdomains that migh
 Verify that the `hosts file` contains a line for the Linode’s public IP address and is associated with the **Fully Qualified Domain Name** (FQDN). In the example below, `192.0.2.0` is the public IP address, `hostname` is the local hostname, and `hostname.example.com` is the FQDN.  
 
 
-| Tables        | Are           | Cool  |
-| ------------- |:-------------:| -----:|
-| col 3 is      | right-aligned | $1600 |
-| col 2 is      | centered      |   $12 |
-| zebra stripes | are neat      |    $1 |
+| /etc/hosts	|
+| ---      |
+| 1. 127.0.0.1 localhost.localdomain localhost  192.0.2.0 hostname.example.com hostname |
 
