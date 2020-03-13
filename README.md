@@ -672,7 +672,7 @@ You can set up an email client to connect to your mail server. Many clients dete
 - **SSL:** Incoming and outgoing servers require authentication and SSL encryption.
 - **Ports:** Use Port `993` for secure IMAP, Port `995` for secure POP3, and Port `587` with SSL for SMTP.
 See Install SquirrelMail on Ubuntu 16.04 for details on installing an email client.
->**Note**
+>**Note**  
 >The Thunderbird email client will sometimes have trouble automatically detecting account settings when using Dovecot. After it fails to detect the appropriate account settings, you can set up your email account manually. Add in the appropriate information for each setting, using the above values, leaving no setting on **Auto** or **Autodetect**. Once you have entered all the information about your mail server and account, press **Done** rather **Re-Test** and Thunderbird should accept the settings and retrieve your mail.
 ## Adding New Domains, Email Addresses, and Aliases
 To add new domains, email addresses, and aliases to the mailserver you will need to update the corresponding MySQL tables created in the MySQL section of this guide.
