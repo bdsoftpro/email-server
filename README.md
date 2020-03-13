@@ -638,3 +638,163 @@ ssl_key = </etc/letsencrypt/live/example.com/privkey.pem
 sudo systemctl restart dovecot
 ~~~
 ## Test Email with Mailutils
+1. To send and receive test emails to your Linode mail server, install the Mailutils package:
+~~~
+sudo apt-get install mailutils
+~~~
+2. Send a test email to an email address outside of your mail server, like a Gmail account. Replace `email1@example.com` with an email address from your mail server:
+~~~
+echo "Email body text" | sudo mail -s "Email subject line" recipient@gmail.com -aFrom:email1@example.com
+~~~
+3. Log in to the test email account and verify that you have received the email from the specified mail server email address.
+4. Send a test email to your Linode mail server from an outside email address. Log back in to your Linode and check that the email was received; substitute in the username and domain you sent the mail to:
+~~~
+sudo mail -f /var/mail/vhosts/example.com/email1
+~~~
+When prompted, enter the number corresponding to the email you would like to view:
+~~~
+  
+"/var/mail/vhosts/example.com/": 9 messages 5 new 4 unread
+U   1 John Doe     Wed Jun 27 16:00  57/2788  Test email 1
+U   2 John Doe     Wed Jun 27 16:02  56/2761  Test email 2
+U   3 John Doe     Wed Jun 27 16:35  15/594   Test email 3
+U   4 John Doe     Wed Jun 27 16:42  71/3535  Test email 4
+>N   5 John Doe     Mon Jul  2 10:55  13/599   Subject of the Email
+?
+~~~
+The email message header and body should display. Consider adding spam and virus filtering and a webmail client.  
+See Troubleshooting problems with Postfix, Dovecot, and MySQL for debugging steps.
+## Email Client
+You can set up an email client to connect to your mail server. Many clients detect server settings automatically. Manual configuration requires the following parameters:
+- **Username:** The full email address, including the `@example.com` part.
+- **Password:** The password that was entered for the email address in the `virtual_users` table of the `mailuser` database.
+- **Server name:** The incoming and outgoing server names must be a domain that resolves to the Linode.
+- **SSL:** Incoming and outgoing servers require authentication and SSL encryption.
+- **Ports:** Use Port `993` for secure IMAP, Port `995` for secure POP3, and Port `587` with SSL for SMTP.
+See Install SquirrelMail on Ubuntu 16.04 for details on installing an email client.
+>**Note**
+>The Thunderbird email client will sometimes have trouble automatically detecting account settings when using Dovecot. After it fails to detect the appropriate account settings, you can set up your email account manually. Add in the appropriate information for each setting, using the above values, leaving no setting on **Auto** or **Autodetect**. Once you have entered all the information about your mail server and account, press **Done** rather **Re-Test** and Thunderbird should accept the settings and retrieve your mail.
+## Adding New Domains, Email Addresses, and Aliases
+To add new domains, email addresses, and aliases to the mailserver you will need to update the corresponding MySQL tables created in the MySQL section of this guide.
+## Domains
+1. To add a new domain, connect to your Linode via SSH.
+2. Log in to the MySQL server:
+~~~
+sudo mysql -u root
+~~~
+3. Enter the root MySQL password when prompted.
+4. View the contents of the table before adding new entries. If you did not use `virtual_domains` as the name of your domain table, replace the value:
+~~~
+SELECT * FROM mailserver.virtual_domains;
+~~~
+5. The output should resemble the following:
+~~~
+        +----+-----------------------+
+        | id | name                  |
+        +----+-----------------------+
+        |  1 | example.com           |
+        |  2 | hostname.example.com  |
+        |  3 | hostname              |
+        |  4 | localhost.example.com |
+        +----+-----------------------+
+~~~
+6. Add a new domain to the table. Replace `newdomain.com` with the desired domain name:
+~~~
+INSERT INTO `mailserver`.`virtual_domains`
+  (`name`)
+VALUES
+  ('newdomain.com');
+~~~
+7. Verify that the new domain has been added. The output should display the new domain name.
+~~~
+SELECT * FROM mailserver.virtual_domains;
+~~~
+8. Exit MySQL:
+~~~
+quit
+~~~
+## Email Addresses
+Log in to the MySQL server:
+1. sudo mysql -u root
+When prompted enter the MySQL password.
+2. Verify the contents of the user table. Replace `virtual_users` with your table name:
+~~~
+SELECT * FROM mailserver.virtual_users;
+~~~
+The output should resemble the following:
+~~~
++----+-----------+-------------------------------------+--------------------+
+| id | domain_id | password                            | email              |
++----+-----------+-------------------------------------+--------------------+
+|  1 |         1 | $6$574ef443973a5529c20616ab7c6828f7 | email1@example.com |
+|  2 |         1 | $6$030fa94bcfc6554023a9aad90a8c9ca1 | email2@example.com |
++----+-----------+-------------------------------------+--------------------+
+2 rows in set (0.01 sec)
+~~~
+3. Add a new email address to the existing table. Replace newpassword with the user’s password, and email3@newdomain.com with the user’s email address:
+~~~
+INSERT INTO `mailserver`.`virtual_users`
+  (`domain_id`, `password` , `email`)
+VALUES
+  ('5', ENCRYPT('newpassword', CONCAT('$6$', SUBSTRING(SHA(RAND()), -16))) , 'email3@newdomain.com');
+~~~
+>**Note**
+>The `domain_id` should correspond to the `id` value of the domain in the `virtual_domains` table. In the example, we are creating an email address for `newdomain.com` added in the previous section.
+4. Verify that the new email address has been added. The new email address should be displayed in the output:
+~~~
+SELECT * FROM mailserver.virtual_users;
+~~~
+5. Exit MySQL:
+~~~
+quit
+~~~
+## Aliases
+1. Log in to the MySQL server:
+~~~
+sudo mysql -u root
+~~~
+When prompted enter the MySQL password.
+2. Verify the contents of the user table. Replace `virtual_users` with your table name:
+~~~
+SELECT * FROM mailserver.virtual_aliases;
+~~~
+The output should resemble the following:
+~~~
++----+-----------+-------------------+--------------------+
+| id | domain_id | source            | destination        |
++----+-----------+-------------------+--------------------+
+|  1 |         1 | alias@example.com | email1@example.com |
++----+-----------+-------------------+--------------------+
+1 row in set (0.00 sec)
+~~~
+3. Add a new alias. Replace `alias@newdomain.com` with the address to forward email from, and `email1@gmail.com` with the address that you want to forward the mail to. The `alias@newdomain.com` needs to be an email address that already exists on the mail server:
+~~~
+INSERT INTO `mailserver`.`virtual_aliases`
+  (`domain_id`, `source`, `destination`)
+VALUES
+  ('5', 'alias@newdomain.com', 'myemail@gmail.com');
+~~~
+>**Note**
+>The `domain_id` should correspond to the `id` value of the domain in the `virtual_domains` table. In the example, we are creating an email address for `newdomain.com` added in the previous section.
+
+You can create a “catch-all” alias which will forward all emails sent to the matching domain that does not have matching aliases or users. Replace `@newdomain.com` with your domain. This value is the source of the alias.
+~~~
+INSERT INTO `mailserver`.`virtual_aliases`
+  (`domain_id`, `source`, `destination`)
+VALUES
+  ('5', '@newdomain.com', 'myemail@gmail.com');
+~~~
+4. Verify that the new alias has been added. The new alias will be displayed in the output:
+~~~
+SELECT * FROM mailserver.virtual_aliases;
+~~~
+5. Exit MySQL:
+~~~
+quit
+~~~
+## More Information
+You may wish to consult the following resources for additional information on this topic. While these are provided in the hope that they will be useful, please note that we cannot vouch for the accuracy or timeliness of externally hosted materials.
+- [Troubleshooting Problems with Postfix, Dovecot, and MySQL](https://www.linode.com/docs/email/postfix/troubleshooting-problems-with-postfix-dovecot-and-mysql/)
+- [Postfix Basic Configuration](http://www.postfix.org/BASIC_CONFIGURATION_README.html)
+- [Postfix SASL Howto](http://www.postfix.org/SASL_README.html)
+- [Dovecot Wiki](https://wiki2.dovecot.org/)
