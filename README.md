@@ -125,3 +125,75 @@ VALUES
 ~~~
 >**Note**  
 >Note which `id` corresponds to which domain, the `id` value is necessary for the next two steps.
+
+2. Add email addresses to the `virtual_users` table. The `domain_id` value references the `virtual_domain` table’s `id` value. Replace the email address values with the addresses that you wish to configure on the mailserver. Replace the `password` values with strong passwords.
+~~~
+INSERT INTO `mailserver`.`virtual_users`
+  (`id`, `domain_id`, `password` , `email`)
+VALUES
+  ('1', '1', ENCRYPT('password', CONCAT('$6$', SUBSTRING(SHA(RAND()), -16))), 'email1@example.com'),
+  ('2', '1', ENCRYPT('password', CONCAT('$6$', SUBSTRING(SHA(RAND()), -16))), 'email2@example.com');
+~~~
+3. An email alias will forward all email from one email address to another. To set up an email alias, add it to the `virtual_aliases` table:
+~~~
+INSERT INTO `mailserver`.`virtual_aliases`
+  (`id`, `domain_id`, `source`, `destination`)
+VALUES
+  ('1', '1', 'alias@example.com', 'email1@example.com');
+~~~
+## Testing
+In the previous section, data was added to the MySQL `mailserver` database. The steps below will test that the data has been stored and can be retrieved.
+1. Log in to MySQL:
+~~~
+sudo mysql -u root
+~~~
+2. Check the contents of the `virtual_domains` table:
+~~~
+SELECT * FROM mailserver.virtual_domains;
+~~~
+3. Verify that you see the following output:
+~~~
++----+-----------------------+
+| id | name                  |
++----+-----------------------+
+|  1 | example.com           |
+|  2 | hostname.example.com  |
+|  3 | hostname              |
+|  4 | localhost.example.com |
++----+-----------------------+
+4 rows in set (0.00 sec)
+~~~
+4. Check the `virtual_users` table:
+~~~
+SELECT * FROM mailserver.virtual_users;
+~~~
+5. Verify the following output, the hashed passwords are longer than they appear below:
+~~~
++----+-----------+-------------------------------------+--------------------+
+| id | domain_id | password                            | email              |
++----+-----------+-------------------------------------+--------------------+
+|  1 |         1 | $6$574ef443973a5529c20616ab7c6828f7 | email1@example.com |
+|  2 |         1 | $6$030fa94bcfc6554023a9aad90a8c9ca1 | email2@example.com |
++----+-----------+-------------------------------------+--------------------+
+2 rows in set (0.01 sec)
+~~~
+6. Check the `virtual_aliases` table:
+~~~
+SELECT * FROM mailserver.virtual_aliases;
+~~~
+7. Verify the following output:
+~~~
++----+-----------+-------------------+--------------------+
+| id | domain_id | source            | destination        |
++----+-----------+-------------------+--------------------+
+|  1 |         1 | alias@example.com | email1@example.com |
++----+-----------+-------------------+--------------------+
+1 row in set (0.00 sec)
+~~~
+8. If everything outputs as expected, exit MySQL:
+~~~
+exit
+~~~
+## Postfix
+Postfix is a Mail Transfer Agent (MTA) that relays mail between the Linode and the internet. It is highly configurable, allowing for great flexibility. This guide maintains many of Posfix’s default configuration values.
+## Configuration File Settings
