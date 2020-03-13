@@ -197,3 +197,134 @@ exit
 ## Postfix
 Postfix is a Mail Transfer Agent (MTA) that relays mail between the Linode and the internet. It is highly configurable, allowing for great flexibility. This guide maintains many of Posfix’s default configuration values.
 ## Configuration File Settings
+The `main.cf` file is the primary configuration file used by Postfix.
+1. Make a copy of the default Postfix configuration file in case you need to revert to the default configuration:
+~~~
+sudo cp /etc/postfix/main.cf /etc/postfix/main.cf.orig
+~~~
+2. Edit the `/etc/postfix/main.cf` file to match the example configurations. Replace occurrences of `example.com` with your domain name:
+~~~
+/etc/postfix/main.cf
+==========================================================================================
+# See /usr/share/postfix/main.cf.dist for a commented, more complete version
+
+# Debian specific:  Specifying a file name will cause the first
+# line of that file to be used as the name.  The Debian default
+# is /etc/mailname.
+#myorigin = /etc/mailname
+
+smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
+biff = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+# Uncomment the next line to generate "delayed mail" warnings
+#delay_warning_time = 4h
+
+readme_directory = no
+
+# TLS parameters
+smtpd_tls_cert_file=/etc/letsencrypt/live/example.com/fullchain.pem
+smtpd_tls_key_file=/etc/letsencrypt/live/example.com/privkey.pem
+smtpd_use_tls=yes
+smtpd_tls_auth_only = yes
+smtp_tls_security_level = may
+smtpd_tls_security_level = may
+smtpd_sasl_security_options = noanonymous, noplaintext
+smtpd_sasl_tls_security_options = noanonymous
+
+# Authentication
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+
+# See /usr/share/doc/postfix/TLS_README.gz in the postfix-doc package for
+# information on enabling SSL in the smtp client.
+
+# Restrictions
+smtpd_helo_restrictions =
+        permit_mynetworks,
+        permit_sasl_authenticated,
+        reject_invalid_helo_hostname,
+        reject_non_fqdn_helo_hostname
+smtpd_recipient_restrictions =
+        permit_mynetworks,
+        permit_sasl_authenticated,
+        reject_non_fqdn_recipient,
+        reject_unknown_recipient_domain,
+        reject_unlisted_recipient,
+        reject_unauth_destination
+smtpd_sender_restrictions =
+        permit_mynetworks,
+        permit_sasl_authenticated,
+        reject_non_fqdn_sender,
+        reject_unknown_sender_domain
+smtpd_relay_restrictions =
+        permit_mynetworks,
+        permit_sasl_authenticated,
+        defer_unauth_destination
+
+# See /usr/share/doc/postfix/TLS_README.gz in the postfix-doc package for
+# information on enabling SSL in the smtp client.
+
+myhostname = example.com
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+mydomain = example.com
+myorigin = $mydomain
+mydestination = localhost
+relayhost =
+mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+mailbox_size_limit = 0
+recipient_delimiter = +
+inet_interfaces = all
+inet_protocols = all
+
+# Handing off local delivery to Dovecot's LMTP, and telling it where to store mail
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+
+# Virtual domains, users, and aliases
+virtual_mailbox_domains = mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf
+virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf
+virtual_alias_maps = mysql:/etc/postfix/mysql-virtual-alias-maps.cf,
+        mysql:/etc/postfix/mysql-virtual-email2email.cf
+
+# Even more Restrictions and MTA params
+disable_vrfy_command = yes
+strict_rfc821_envelopes = yes
+#smtpd_etrn_restrictions = reject
+#smtpd_reject_unlisted_sender = yes
+#smtpd_reject_unlisted_recipient = yes
+smtpd_delay_reject = yes
+smtpd_helo_required = yes
+smtp_always_send_ehlo = yes
+#smtpd_hard_error_limit = 1
+smtpd_timeout = 30s
+smtp_helo_timeout = 15s
+smtp_rcpt_timeout = 15s
+smtpd_recipient_limit = 40
+minimal_backoff_time = 180s
+maximal_backoff_time = 3h
+
+# Reply Rejection Codes
+invalid_hostname_reject_code = 550
+non_fqdn_reject_code = 550
+unknown_address_reject_code = 550
+unknown_client_reject_code = 550
+unknown_hostname_reject_code = 550
+unverified_recipient_reject_code = 550
+unverified_sender_reject_code = 550
+~~~
+3. The `main.cf` file declares the location of `virtual_mailbox_domains`, `virtual_mailbox_maps`, and `virtual_alias_maps` files. These files contain the connection information for the MySQL lookup tables created in the MySQL section of this guide. Postfix will use this data to identify all domains, corresponding mailboxes, and valid users.
+  Create the file for `virtual_mailbox_domains`. Replace the value for `password` with your database user’s password. If you used a different name for your `database` user and `dbname` replace those with your own values:
+~~~
+/etc/postfix/mysql-virtual-mailbox-domains.cf
+====================================================================
+user = mailuser
+password = mailuserpass
+hosts = 127.0.0.1
+dbname = mailserver
+query = SELECT 1 FROM virtual_domains WHERE name='%s'
+~~~
+
