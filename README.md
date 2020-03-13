@@ -51,5 +51,17 @@ This guide uses the following package versions:
 * MySQL 14.14
 ## MySQL
 The mail server’s virtual users and passwords are stored in a MySQL database. Dovecot and Postfix require this data. Follow the steps below to create the database tables for virtual users, domains and aliases:
-1. Use the mysql_secure_installation tool to configure additional security options. This tool will ask if you want to set a new password for the MySQL root user, but you can skip that step:
-```sudo mysql_secure_installation```
+1. Use the mysql_secure_installation tool to configure additional security options. This tool will ask if you want to set a new password for the MySQL root user, but you can skip that step:  
+~~~
+sudo mysql_secure_installation
+~~~
+Answer Y at the following prompts:
+- Remove anonymous users?
+- Disallow root login remotely?
+- Remove test database and access to it?
+- Reload privilege tables now?
+2. Create a new database:
+~~~
+sudo mysqladmin -u root -p create mailserver
+~~~
+
